@@ -7,7 +7,7 @@ export default class WebhookStack extends Stack {
     super(scope, id, props);
 
     const webhookAPI = new Api(this, "WebhookAPI", {
-      routes: { "GET /": "src/eventConsumer.handler" },
+      routes: { "POST /": "src/eventConsumer.handler" },
     });
 
     this.WebhookEndpoint = webhookAPI.url;

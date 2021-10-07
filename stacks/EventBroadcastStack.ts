@@ -1,5 +1,17 @@
-import { CfnApiDestination, EventBus, Rule } from "@aws-cdk/aws-events";
-import { EventBus as EventBusTarget } from "@aws-cdk/aws-events-targets";
+import {
+  CfnApiDestination,
+  CfnConnection,
+  CfnRule,
+  EventBus,
+  // Rule,
+} from "@aws-cdk/aws-events";
+// import { ApiDestination as ApiDestinationTarget, EventBus as EventBusTarget } from "@aws-cdk/aws-events-targets";
+import {
+  PolicyDocument,
+  PolicyStatement,
+  Role,
+  ServicePrincipal,
+} from "@aws-cdk/aws-iam";
 import { Duration } from "@aws-cdk/core";
 import {
   Api,
@@ -20,6 +32,8 @@ export default class EventBroadcastStack extends Stack {
     const broadcastEventBus = new EventBus(this, "BroadcastEventBus", {
       eventBusName: "broadcast-event-bus",
     });
+
+    broadcastEventBus._enableCrossEnvironment();
 
     broadcastEventBus.archive("BroadcastEventArchive", {
       archiveName: "BroadcastEventArchive",
@@ -45,38 +59,114 @@ export default class EventBroadcastStack extends Stack {
       [broadcastEventBus, "grantPutEventsTo"],
     ]);
 
-    const broadcastRule = new Rule(this, "BroadcastRule", {
-      eventBus: broadcastEventBus,
-      eventPattern: {
-        account: [this.account],
-        detailType: ["BROADCAST"],
-        source: ["event.broadcast"],
-      },
-    });
-
-    broadcastRule.addTarget(
-      new EventBusTarget(
-        EventBus.fromEventBusArn(
-          this,
-          "XAccountEventBus",
-          "TODO - deploy a bus from another stack to another account and share ARN"
-        )
-      )
+    const eventBroadcastAPIDestinationConnection = new CfnConnection(
+      this,
+      "EventBroadcastAPIDestinationConnection",
+      {
+        authorizationType: "API_KEY",
+        authParameters: {
+          ApiKeyAuthParameters: {
+            ApiKeyName: "key",
+            ApiKeyValue: "value",
+          },
+          InvocationHttpParameters: {
+            BodyParameters: [
+              {
+                Key: "key",
+                Value: "value",
+              },
+            ],
+          },
+        },
+      }
     );
 
     const eventBroadcastAPIDestination = new CfnApiDestination(
       this,
       "EventBroadcastAPIDestination",
       {
-        connectionArn:
-          "TODO - https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-events.CfnConnection.html",
+        connectionArn: eventBroadcastAPIDestinationConnection.attrArn,
         httpMethod: "POST",
         invocationEndpoint: props.WebhookEndpoint,
         invocationRateLimitPerSecond: 1,
       }
     );
 
-    // TODO: Add eventBroadcastAPIDestination to broadcastRule targets
+    // TODO: Use L2 constructs when support for API Destinations is shipped https://github.com/aws/aws-cdk/pull/13729
+    // const broadcastRule = new Rule(this, "BroadcastRule", {
+    //   eventBus: broadcastEventBus,
+    //   eventPattern: {
+    //     account: [this.account],
+    //     detailType: ["BROADCAST"],
+    //     source: ["event.broadcast"],
+    //   },
+    // });
+
+    // const xAccountEventBus = EventBus.fromEventBusArn(
+    //   this,
+    //   "XAccountEventBus",
+    //   "arn:aws:events:eu-central-1:157983949820:event-bus/gblusthe-x-account-test"
+    // );
+
+    // broadcastRule.addTarget(new EventBusTarget(xAccountEventBus));
+
+    // broadcastRule.addTarget(new ApiDestinationTarget(eventBroadcastAPIDestination));
+
+    // TODO: Remove IAM roles when support for API Destinations is shipped
+    const xAccountEventRole = new Role(this, "XAccountEventRole", {
+      assumedBy: new ServicePrincipal("events.amazonaws.com"),
+      inlinePolicies: {
+        defaultPolicy: new PolicyDocument({
+          statements: [
+            new PolicyStatement({
+              actions: ["events:PutEvents"],
+              resources: [
+                "arn:aws:events:eu-central-1:157983949820:event-bus/gblusthe-x-account-test",
+              ],
+            }),
+          ],
+        }),
+      },
+    });
+
+    const apiDestinationEventRole = new Role(this, "APIDestinationEventRole", {
+      assumedBy: new ServicePrincipal("events.amazonaws.com"),
+      inlinePolicies: {
+        defaultPolicy: new PolicyDocument({
+          statements: [
+            new PolicyStatement({
+              actions: ["events:InvokeApiDestination"],
+              resources: [
+                `arn:aws:events:${this.region}:${this.account}:api-destination/${eventBroadcastAPIDestination.ref}/*`,
+              ],
+            }),
+          ],
+        }),
+      },
+    });
+
+    // TODO: Remove CfnRule when support for API Destinations is shipped
+    new CfnRule(this, "BroadcastRule", {
+      eventBusName: broadcastEventBus.eventBusName,
+      eventPattern: {
+        account: [this.account],
+        detailType: ["BROADCAST"],
+        source: ["event.broadcast"],
+      },
+      name: "BroadcastRule",
+      targets: [
+        {
+          arn: "arn:aws:events:eu-central-1:157983949820:event-bus/gblusthe-x-account-test",
+          id: "Target0",
+          roleArn: xAccountEventRole.roleArn,
+        },
+        {
+          arn: eventBroadcastAPIDestination.attrArn,
+          id: "Target1",
+          roleArn: apiDestinationEventRole.roleArn,
+        },
+      ],
+    });
 
     // TODO: Setup custom schema registry and add custom schema https://docs.aws.amazon.com/cdk/api/latest/docs/aws-eventschemas-readme.html
 

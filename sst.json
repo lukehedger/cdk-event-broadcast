@@ -1,5 +1,5 @@
 {
   "main": "stacks/index.ts",
   "name": "event-broadcast",
-  "region": "eu-west-2"
+  "region": "eu-central-1"
 }
