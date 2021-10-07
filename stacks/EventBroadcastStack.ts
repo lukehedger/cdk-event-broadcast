@@ -150,7 +150,7 @@ export default class EventBroadcastStack extends Stack {
       eventBusName: broadcastEventBus.eventBusName,
       eventPattern: {
         account: [this.account],
-        detailType: ["BROADCAST"],
+        "detail-type": ["BROADCAST"],
         source: ["event.broadcast"],
       },
       name: "BroadcastRule",
