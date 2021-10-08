@@ -55,9 +55,15 @@ To [send events to an EventBridge event bus in another account](https://docs.aws
 }
 ```
 
+## Code Bindings
+
+Generate TypeScript code bindings from event schema by following [these instructions](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-schema-code-bindings.html) or running:
+
+```sh
+npm run generate:types
+```
 
 ---
 
 ## TODO
-- [ ] Add [code bindings](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-schema-code-bindings.html) example
 - [ ] Add [CDK EventBridge websocket](https://github.com/boyney123/cdk-eventbridge-socket) stack for monitoring

@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "BROADCAST",
+  "definitions": {
+    "BROADCAST": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Data"
+        },
+        "metadata": {
+          "$ref": "#/definitions/Metadata"
+        }
+      },
+      "required": ["data", "metadata"],
+      "type": "object"
+    },
+    "Data": {
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": ["message"],
+      "type": "object"
+    },
+    "Metadata": {
+      "properties": {
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": ["source"],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "account": {
+      "type": "string"
+    },
+    "detail": {
+      "$ref": "#/definitions/BROADCAST"
+    },
+    "detail-type": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "resources": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "source": {
+      "type": "string"
+    },
+    "time": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "account",
+    "detail",
+    "detail-type",
+    "id",
+    "region",
+    "resources",
+    "source",
+    "time",
+    "version"
+  ],
+  "type": "object",
+  "x-amazon-events-detail-type": "BROADCAST",
+  "x-amazon-events-source": "event.broadcast"
+}

@@ -13,7 +13,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (
     Entries: [
       {
         Detail: JSON.stringify({
-          broadcastMessage: "Hello, from eventProducer",
+          data: {
+            message: "Hello, from eventProducer",
+          },
+          metadata: {
+            source: process.env.AWS_LAMBDA_FUNCTION_NAME,
+          },
         }),
         DetailType: "BROADCAST",
         EventBusName: process.env.EVENT_BUS_NAME,

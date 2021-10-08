@@ -7,6 +7,12 @@ import {
 } from "@aws-cdk/aws-events";
 // import { ApiDestination as ApiDestinationTarget, EventBus as EventBusTarget } from "@aws-cdk/aws-events-targets";
 import {
+  CfnRegistry,
+  CfnRegistryPolicy,
+  CfnSchema,
+} from "@aws-cdk/aws-eventschemas";
+import {
+  AccountPrincipal,
   PolicyDocument,
   PolicyStatement,
   Role,
@@ -20,6 +26,7 @@ import {
   Stack,
   StackProps,
 } from "@serverless-stack/resources";
+import EventBroadcastSchema from "../schema/event.broadcast@BROADCAST-v1.json";
 
 interface EventBroadcastStackProps extends StackProps {
   readonly WebhookEndpoint: string;
@@ -168,7 +175,36 @@ export default class EventBroadcastStack extends Stack {
       ],
     });
 
-    // TODO: Setup custom schema registry and add custom schema https://docs.aws.amazon.com/cdk/api/latest/docs/aws-eventschemas-readme.html
+    const eventBroadcastSchemaRegistry = new CfnRegistry(
+      this,
+      "EventBroadcastSchemaRegistry",
+      {
+        registryName: "EventBroadcastSchemaRegistry",
+      }
+    );
+
+    const broadcastEventSchema = new CfnSchema(this, "BroadcastEventSchema", {
+      content: JSON.stringify(EventBroadcastSchema),
+      registryName: eventBroadcastSchemaRegistry.attrRegistryName,
+      schemaName: "BroadcastEventSchema",
+      type: "JSONSchemaDraft4",
+    });
+
+    new CfnRegistryPolicy(this, "EventBroadcastSchemaRegistryPolicy", {
+      policy: new PolicyDocument({
+        statements: [
+          new PolicyStatement({
+            actions: ["schemas:*"],
+            principals: [new AccountPrincipal("157983949820")],
+            resources: [
+              `arn:aws:events:${this.region}:${this.account}:registry/${eventBroadcastSchemaRegistry.ref}`,
+              `arn:aws:events:${this.region}:${this.account}:schema/${eventBroadcastSchemaRegistry.ref}/${broadcastEventSchema.ref}`,
+            ],
+          }),
+        ],
+      }),
+      registryName: eventBroadcastSchemaRegistry.attrRegistryName,
+    });
 
     this.addOutputs({
       ApiEndpoint: broadcastAPI.url,
