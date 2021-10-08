@@ -66,4 +66,6 @@ npm run generate:types
 ---
 
 ## TODO
-- [ ] Add [CDK EventBridge websocket](https://github.com/boyney123/cdk-eventbridge-socket) stack for monitoring
+- [ ] Add event producer integration test
+- [ ] Add event broadcast stack tests
+- [ ] Add input transformer example, with tests
