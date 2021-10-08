@@ -18,6 +18,7 @@ import {
   Role,
   ServicePrincipal,
 } from "@aws-cdk/aws-iam";
+import { Queue } from "@aws-cdk/aws-sqs";
 import { Duration } from "@aws-cdk/core";
 import {
   Api,
@@ -99,6 +100,10 @@ export default class EventBroadcastStack extends Stack {
       }
     );
 
+    const apiDestinationEventDLQ = new Queue(this, "APIDestinationEventDLQ");
+
+    const xAccountEventDLQ = new Queue(this, "XAccountEventDLQ");
+
     // TODO: Use L2 constructs when support for API Destinations is shipped https://github.com/aws/aws-cdk/pull/13729
     // const broadcastRule = new Rule(this, "BroadcastRule", {
     //   eventBus: broadcastEventBus,
@@ -164,11 +169,17 @@ export default class EventBroadcastStack extends Stack {
       targets: [
         {
           arn: "arn:aws:events:eu-central-1:157983949820:event-bus/gblusthe-x-account-test",
+          deadLetterConfig: {
+            arn: xAccountEventDLQ.queueArn,
+          },
           id: "Target0",
           roleArn: xAccountEventRole.roleArn,
         },
         {
           arn: eventBroadcastAPIDestination.attrArn,
+          deadLetterConfig: {
+            arn: apiDestinationEventDLQ.queueArn,
+          },
           id: "Target1",
           roleArn: apiDestinationEventRole.roleArn,
         },
