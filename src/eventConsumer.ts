@@ -1,12 +1,7 @@
-import {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyHandlerV2,
-  Context,
-} from "aws-lambda";
+import { APIGatewayProxyEventV2, APIGatewayProxyHandlerV2 } from "aws-lambda";
 
 export const handler: APIGatewayProxyHandlerV2 = async (
-  event: APIGatewayProxyEventV2,
-  context: Context
+  event: APIGatewayProxyEventV2
 ) => {
   console.log("Received EventBridge API Destination event");
 
